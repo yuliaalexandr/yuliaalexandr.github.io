@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Joomy Korkut - Scoped implicit conversions for Idris</title>
+    <link rel="stylesheet" type="text/css" href="../css/base.css" />
+    <link rel="stylesheet" type="text/css" href="../css/layout.css" />
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css" />
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="icon" href="../images/favicon.ico">
+    <link rel="alternate" type="application/rss+xml" title="cat theory blog" href="http://cattheory.com/atom.xml" />
+    <meta name="keywords" content="joomy,cumhur,korkut,cat,theory,category,programming,haskell,javascript,vim,turkish,politics,wesleyan,princeton" />
+    <meta name="description" content="Joomy's computer science blog." />
+    <!-- Schema.org markup for Google+ -->
+    <meta itemprop="name" content="Joomy Korkut">
+    
+      <meta itemprop="description" content="The Idris community is not so fond of implicit conversions, I think they're a useful and powerful tool that are easy to misuse. Here's an idea to fix them.">
+    
+    <meta itemprop="image" content="/images/icon.png">
+
+    <!-- Open Graph data -->
+    <meta property="og:title" content="Scoped implicit conversions for Idris" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="http://cattheory.com/" />
+    <meta property="og:image" content="http://cattheory.com/images/icon.png" />
+    
+      <meta property="og:description" content="The Idris community is not so fond of implicit conversions, I think they're a useful and powerful tool that are easy to misuse. Here's an idea to fix them.">
+    
+    <meta property="og:site_name" content="Joomy Korkut" />
+    
+  </head>
+  <body>
+    <div id="navigation">
+      <a href="../"><h1>Joomy Korkut</h1></a>
+      <a href="../">Home</a>
+      <a href="../archive.html">Archive</a>
+      <a href="../pages/research.html">Research</a>
+      <!-- <a href="/turkce.html" style="font-size:80%">🇹🇷 Türkçe</a> -->
+      <div>
+        <a alt="E-mail" target="_blank" href="mailto:joomy@cattheory.com"><i class="fa fa-at"></i></a>
+        <a alt="Facebook" target="_blank" href="https://facebook.com/ckorkut"><i class="fa fa-facebook"></i></a>
+        <a alt="Github" target="_blank" href="http://github.com/joom"><i class="fa fa-github"></i></a>
+        <a alt="Twitter" target="_blank" href="http://twitter.com/cattheory"><i class="fa fa-twitter"></i></a>
+        <a alt="Instagram" target="_blank" href="http://instagram.com/cattheory"><i class="fa fa-instagram"></i></a>
+      </div>
+      <div>
+        <a alt="Google Calendar" target="_blank" href="https://calendar.google.com/calendar/embed?src=cumhurkorkut%40gmail.com&ctz=America%2FNew_York"><i class="fa fa-calendar"></i></a>
+        <a alt="Linkedin" target="_blank" href="http://www.linkedin.com/in/joomykorkut/"><i class="fa fa-linkedin-square"></i></a>
+        <a alt="Stack Overflow" target="_blank" href="https://stackoverflow.com/users/2016295/joomy-korkut"><i class="fa fa-stack-overflow"></i></a>
+        <a alt="Last.fm" target="_blank" href="http://last.fm/user/cattheory"><i class="fa fa-lastfm-square"></i></a>
+        <a alt="Spotify" target="_blank" href="https://open.spotify.com/user/12122900763"><i class="fa fa-spotify"></i></a>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="post-title">
+<a href="../posts/2017-11-14-scoped-implicit-conversions.html">Scoped implicit conversions for Idris</a>
+</div>
+
+<div class="info">
+    Posted on November 14, 2017,
+    
+        by joomy,
+    
+    
+      in: <a href="../tags/idris.html">idris</a>, <a href="../tags/proposal.html">proposal</a>
+    
+</div>
+
+<div class="post-body">
+<p>The Idris community is not so fond of implicit conversions, I think they’re a useful and powerful tool that are easy to misuse, especially because they are global. Here’s an idea to fix them by making them scoped<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>.</p>
+<h1 id="what-is-wrong-with-implicit-conversions">What is wrong with implicit conversions?</h1>
+<p><a href="http://docs.idris-lang.org/en/latest/tutorial/miscellany.html#implicit-conversions">Implicit conversions</a> are a controversial feature of Idris. Even in the Idris documentation, users are discouraged to use them for simple types, and advised to use them for DSLs or to simplify intricate proofs.</p>
+<p>Here’s how implicit conversions currently work:</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">implicit</span> <span class="fu">intString</span> <span class="ot">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+intString <span class="fu">=</span> show
+
+<span class="fu">test</span> <span class="ot">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+test x <span class="fu">=</span> <span class="st">&quot;Number &quot;</span> <span class="fu">++</span> x</code></pre></div>
+<p>In the <code>test</code> function, the variable <code>x</code> is of type <code>Int</code>, but it is automatically converted to a <code>String</code> by an application of <code>intString</code>. Moreover, if <code>intString</code> is exported from the module which is later imported to another module, <code>intString</code> will be implicitly applied in the outer module too! 🎃 (well, Halloween is over but this is quite spooky.)</p>
+<p>It is understandable that implicit conversions resemble weak typing, especially when it is used on base types like <code>Int</code> and <code>String</code>. However, don’t forget that unlike weak typing, we know exactly what we’re doing<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a>. One can argue that implicit conversions bite us when we don’t know what we are doing, and they prevent the type system from doing its job of warning us in those cases.</p>
+<p>Here’s an example of how it can bite us:</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">implicit</span> <span class="fu">boolString</span> <span class="ot">:</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+boolString <span class="fu">=</span> show
+
+<span class="kw">implicit</span> <span class="fu">stringBool</span> <span class="ot">:</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+stringBool <span class="st">&quot;True&quot;</span> <span class="fu">=</span> <span class="dt">True</span>
+stringBool <span class="fu">_</span> <span class="fu">=</span> <span class="dt">False</span>
+
+<span class="kw">record</span> <span class="dt">Person</span> <span class="kw">where</span>
+  constructor <span class="dt">MkPerson</span>
+  <span class="fu">name</span> <span class="ot">:</span> <span class="dt">String</span>
+  <span class="fu">hasCar</span> <span class="ot">:</span> <span class="dt">Bool</span>
+
+<span class="fu">joe</span> <span class="ot">:</span> <span class="dt">Person</span>
+joe <span class="fu">=</span> <span class="dt">MkPerson</span> <span class="st">&quot;Joe&quot;</span> <span class="dt">True</span>
+
+<span class="fu">fred</span> <span class="ot">:</span> <span class="dt">Person</span>
+fred <span class="fu">=</span> <span class="dt">MkPerson</span> <span class="dt">True</span> <span class="st">&quot;Fred&quot;</span></code></pre></div>
+<p>We wouldn’t want <code>fred</code> to type check, because we made a mistake about the argument order. But it does type check because we have carelessly defined two implicit conversions that convert <code>Bool</code> and <code>String</code> to each other. So now we ended up with an incorrect value for <code>fred</code>, which will evaluate to <code>MkPerson &quot;True&quot; False</code>.</p>
+<p>There might also be a use case for two implicit conversions that convert to each other. The actual problem with this is that at a given point, we do not have a way to know what implicit conversions are active. Especially if you import libraries that export implicit conversions, this is a serious problem.</p>
+<p>Another problem is when we have multiple applicable implicit conversions:</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">implicit</span> <span class="fu">natString</span> <span class="ot">:</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+natString <span class="dt">Z</span> <span class="fu">=</span> <span class="st">&quot;Z&quot;</span>
+natString (<span class="dt">S</span> n) <span class="fu">=</span> <span class="st">&quot;S(&quot;</span> <span class="fu">++</span> natString n <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
+
+<span class="kw">implicit</span> <span class="fu">natString2</span> <span class="ot">:</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+natString2 <span class="fu">=</span> show
+
+<span class="fu">test2</span> <span class="ot">:</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+test2 x <span class="fu">=</span> <span class="st">&quot;Nat &quot;</span> <span class="fu">++</span> x</code></pre></div>
+<p>This code doesn’t type check, but if we remove either <code>natString</code> or <code>natString2</code>, then it does. If we have no way of what implicit conversions we have at a given point, we can easily make the mistake of having multiple implicit conversions of the same type. We need a way to limit them.</p>
+<h1 id="making-implicit-conversions-non-global">Making implicit conversions non-global</h1>
+<p>Here’s a list of possible solutions and their pros and cons.</p>
+<h2 id="declaring-the-export-level-of-implicit-conversion">Declaring the export level of implicit conversion</h2>
+<p>Currently if an implicit conversion function is exported, it will be an implicit conversion wherever it is imported. One solution might be to add a new keyword that declares the function to be an implicit conversion only inside that module. Even though it strongly regulates implicits, this isn’t really what we need because if an implicit conversion is useful, it should be available in other modules also as an implicit conversion.</p>
+<p>We can currently (as of Idris 1.1.1) achieve this with a small hack:</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">public</span> export
+<span class="fu">boolString</span> <span class="ot">:</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+boolString <span class="fu">=</span> show
+
+<span class="kw">private</span> <span class="kw">implicit</span>
+<span class="fu">boolString'</span> <span class="ot">:</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+boolString' <span class="fu">=</span> boolString</code></pre></div>
+<p>This way, the actual function <code>boolString</code> is exported and not implicit, and we will have <code>boolString'</code>, which is just an alias for <code>boolString</code>, only inside this module, available as an implicit conversion.</p>
+<p>Similarly, if we are in a different module, we can just define a <code>private implicit</code> alias for the conversion you want. This works, but it is repetitive.</p>
+<h2 id="scoped-implicit-conversions">Scoped implicit conversions</h2>
+<p>A better solution would be to have a new syntax block (similar to <a href="http://docs.idris-lang.org/en/latest/tutorial/modules.html#parameterised-blocks">parametrized blocks</a>) that limits the scope of the implicit conversions. This way, a function would only become an implicit conversion if it is declared one for the block. For definitions outside the block, there would be no implicit conversion. Here’s what it would look like: (This is not valid Idris yet, just a proposal)</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="fu">intString</span> <span class="ot">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+intString <span class="fu">=</span> show
+
+<span class="fu">natString</span> <span class="ot">:</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+natString <span class="dt">Z</span> <span class="fu">=</span> <span class="st">&quot;Z&quot;</span>
+natString (<span class="dt">S</span> n) <span class="fu">=</span> <span class="st">&quot;S(&quot;</span> <span class="fu">++</span> natString n <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
+
+implicits (intString)
+  <span class="fu">test</span> <span class="ot">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+  test x <span class="fu">=</span> <span class="st">&quot;Number &quot;</span> <span class="fu">++</span> x
+
+implicits (intString, natString)
+  <span class="fu">test2</span> <span class="ot">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+  test2 x y <span class="fu">=</span> <span class="st">&quot;Hello &quot;</span> <span class="fu">++</span> x <span class="fu">++</span> <span class="st">&quot;, &quot;</span> <span class="fu">++</span> y</code></pre></div>
+<p>While these aren’t crucial use cases, but they illustrate what the idea is. The only problem with this is, what should we do if there are too many implicit conversions? Do we have to list all of them every time we want to use them? The point of having implicit conversions is to save time, after all.</p>
+<p>Here’s an example that has many implicit conversions (in proposed syntax), we will try to take advantage of the implicit conversion to write S-expressions easily.</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">data</span> <span class="dt">SExp</span> <span class="fu">=</span>
+   <span class="dt">SExpList</span> (<span class="dt">List</span> <span class="dt">SExp</span>) <span class="fu">|</span> <span class="dt">StringAtom</span> <span class="dt">String</span> <span class="fu">|</span> <span class="dt">BoolAtom</span> <span class="dt">Bool</span> <span class="fu">|</span>
+   <span class="dt">IntegerAtom</span> <span class="dt">Integer</span> <span class="fu">|</span> <span class="dt">SymbolAtom</span> <span class="dt">String</span>
+
+<span class="fu">okMessage</span> <span class="ot">:</span> <span class="dt">SExp</span>
+okMessage <span class="fu">=</span> <span class="dt">SExpList</span> [<span class="dt">SymbolAtom</span> <span class="st">&quot;ok&quot;</span>, <span class="dt">BoolAtom</span> <span class="dt">True</span>]
+
+implicits (<span class="dt">SExpList</span>, <span class="dt">BoolAtom</span>, <span class="dt">IntegerAtom</span>, <span class="dt">SymbolAtom</span>)
+  <span class="fu">okMessage2</span> <span class="ot">:</span> <span class="dt">SExp</span>
+  okMessage2 <span class="fu">=</span> [<span class="st">&quot;ok&quot;</span>, <span class="dt">True</span>]</code></pre></div>
+<p>We don’t want to list all the implicit conversions every time, so what if we had a way to collectively refer to them? Namespaces sound like a good way to do that. What if we could do something like this: (proposed syntax)</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">namespace</span> <span class="dt">SExpDef</span>
+  <span class="kw">data</span> <span class="dt">SExp</span> <span class="fu">=</span>
+    <span class="dt">SExpList</span> (<span class="dt">List</span> <span class="dt">SExp</span>) <span class="fu">|</span> <span class="dt">StringAtom</span> <span class="dt">String</span> <span class="fu">|</span> <span class="dt">BoolAtom</span> <span class="dt">Bool</span> <span class="fu">|</span>
+    <span class="dt">IntegerAtom</span> <span class="dt">Integer</span> <span class="fu">|</span> <span class="dt">SymbolAtom</span> <span class="dt">String</span>
+  <span class="kw">%</span>implicits SExpList, BoolAtom, IntegerAtom, SymbolAtom
+
+implicits <span class="dt">SExpDef</span>
+  <span class="fu">okMessage2</span> <span class="ot">:</span> <span class="dt">SExp</span>
+  okMessage2 <span class="fu">=</span> [<span class="st">&quot;ok&quot;</span>, <span class="dt">True</span>]</code></pre></div>
+<p>This way we can declare the implicit conversions associated with a namespace, without declaring them as global implicit conversions. Later we can declare a block <code>implicits SExpDef</code> and use those as implicit conversions.</p>
+<h3 id="constructors-as-implicit-conversions">Constructors as implicit conversions</h3>
+<p>Idris doesn’t allow constructors to be declared implicit conversions yet. I proposed this on Idris IRC recently, and got multiple replies that said implicit conversions should be removed from Idris altogether. Currently implicit conversions are limited to function definitions. So we could do the little hack we mentioned above and define new functions whose sole purpose is to function as implicit conversions.</p>
+<div class="sourceCode"><pre class="sourceCode idris"><code class="sourceCode idris"><span class="kw">implicit</span> <span class="fu">sExpList</span> <span class="ot">:</span> <span class="dt">List</span> <span class="dt">SExp</span> <span class="ot">-&gt;</span> <span class="dt">SExp</span>
+sExpList <span class="fu">=</span> <span class="dt">SExpList</span>
+<span class="kw">implicit</span> <span class="fu">boolAtom</span> <span class="ot">:</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">SExp</span>
+boolAtom <span class="fu">=</span> <span class="dt">BoolAtom</span>
+<span class="kw">implicit</span> <span class="fu">integerAtom</span> <span class="ot">:</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">SExp</span>
+integerAtom <span class="fu">=</span> <span class="dt">IntegerAtom</span>
+<span class="kw">implicit</span> <span class="fu">symbolAtom</span> <span class="ot">:</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SExp</span>
+symbolAtom <span class="fu">=</span> <span class="dt">SymbolAtom</span></code></pre></div>
+<p>Once again, this is repetitive. This new syntax that I’m proposing removes the restriction that implicit conversions can be declared only in function definitions.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>If you don’t like implicit conversions, that is probably because they are global, and they can override each other and cause type errors, and then we don’t have good enough type errors yet that deal with implicit conversions. So let’s invent a new way to handle implicit conversions by limiting which ones we want to use in a definition. My suggestions is to introduce a new syntax block that I called <code>implicits</code> that allows us to give a scope determine which implicit conversions we want to apply, and where.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Thanks to Jaden Geller for <a href="https://twitter.com/JadenGeller/status/930311056085409792">naming the idea</a>. You might also want to check the previous/quoted tweets in the thread.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>It’s hard not to think about <a href="https://www.youtube.com/watch?v=dqshYG4qvT4">Marco Rubio</a> when this phrase comes up.<a href="#fnref2">↩</a></p></li>
+</ol>
+</div>
+</div>
+
+<hr>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'cattheory';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+
+      <div style="clear: both"></div>
+
+      <div id="footer">
+        Powered by
+        <a target="_blank" href="http://jaspervdj.be/hakyll">Hakyll</a> and
+        <a target="_blank" href="http://johnmacfarlane.net/pandoc/">Pandoc</a>.
+        Blog source code is
+        <a target="_blank" href="http://github.com/cattheory/blog">available</a>.
+        <a target="_blank" href="https://www.haskellers.com/user/3553">
+          <img src="https://www.haskellers.com/static/badge.png" alt="I'm a Haskeller">
+        </a>
+      </div>
+    </div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-57012377-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </body>
+</html>

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Joomy Korkut - An impractical pseudo-Prolog</title>
+    <link rel="stylesheet" type="text/css" href="../css/base.css" />
+    <link rel="stylesheet" type="text/css" href="../css/layout.css" />
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css" />
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="icon" href="../images/favicon.ico">
+    <link rel="alternate" type="application/rss+xml" title="cat theory blog" href="http://cattheory.com/atom.xml" />
+    <meta name="keywords" content="joomy,cumhur,korkut,cat,theory,category,programming,haskell,javascript,vim,turkish,politics,wesleyan,princeton" />
+    <meta name="description" content="Joomy's computer science blog." />
+    <!-- Schema.org markup for Google+ -->
+    <meta itemprop="name" content="Joomy Korkut">
+    
+      <meta itemprop="description" content="I built a pseudo-Prolog that tries to answer queries by building the least Herbrand model, as a final project for a class. I chose to build it in Haskell to take advantage of lazy evaluations, but even then I couldn't handle infinite sets.">
+    
+    <meta itemprop="image" content="/images/icon.png">
+
+    <!-- Open Graph data -->
+    <meta property="og:title" content="An impractical pseudo-Prolog" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="http://cattheory.com/" />
+    <meta property="og:image" content="http://cattheory.com/images/icon.png" />
+    
+      <meta property="og:description" content="I built a pseudo-Prolog that tries to answer queries by building the least Herbrand model, as a final project for a class. I chose to build it in Haskell to take advantage of lazy evaluations, but even then I couldn't handle infinite sets.">
+    
+    <meta property="og:site_name" content="Joomy Korkut" />
+    
+      <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+  </head>
+  <body>
+    <div id="navigation">
+      <a href="../"><h1>Joomy Korkut</h1></a>
+      <a href="../">Home</a>
+      <a href="../archive.html">Archive</a>
+      <a href="../pages/research.html">Research</a>
+      <!-- <a href="/turkce.html" style="font-size:80%">🇹🇷 Türkçe</a> -->
+      <div>
+        <a alt="E-mail" target="_blank" href="mailto:joomy@cattheory.com"><i class="fa fa-at"></i></a>
+        <a alt="Facebook" target="_blank" href="https://facebook.com/ckorkut"><i class="fa fa-facebook"></i></a>
+        <a alt="Github" target="_blank" href="http://github.com/joom"><i class="fa fa-github"></i></a>
+        <a alt="Twitter" target="_blank" href="http://twitter.com/cattheory"><i class="fa fa-twitter"></i></a>
+        <a alt="Instagram" target="_blank" href="http://instagram.com/cattheory"><i class="fa fa-instagram"></i></a>
+      </div>
+      <div>
+        <a alt="Google Calendar" target="_blank" href="https://calendar.google.com/calendar/embed?src=cumhurkorkut%40gmail.com&ctz=America%2FNew_York"><i class="fa fa-calendar"></i></a>
+        <a alt="Linkedin" target="_blank" href="http://www.linkedin.com/in/joomykorkut/"><i class="fa fa-linkedin-square"></i></a>
+        <a alt="Stack Overflow" target="_blank" href="https://stackoverflow.com/users/2016295/joomy-korkut"><i class="fa fa-stack-overflow"></i></a>
+        <a alt="Last.fm" target="_blank" href="http://last.fm/user/cattheory"><i class="fa fa-lastfm-square"></i></a>
+        <a alt="Spotify" target="_blank" href="https://open.spotify.com/user/12122900763"><i class="fa fa-spotify"></i></a>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="post-title">
+<a href="../posts/2014-12-05-herbrand.html">An impractical pseudo-Prolog</a>
+</div>
+
+<div class="info">
+    Posted on December  5, 2014,
+    
+        by joomy,
+    
+    
+      in: <a href="../tags/prolog.html">prolog</a>, <a href="../tags/logic.html">logic</a>, <a href="../tags/programming.html">programming</a>, <a href="../tags/haskell.html">haskell</a>
+    
+</div>
+
+<div class="post-body">
+<p>As my final project for COMP360 Computational Logic and Logic Programming, Fall 2014, Prof. Lipton, I decided to implement a pseudo-Prolog that tries to answer queries by building the least Herbrand model<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>. A project like this is not only very impractical and impossible to use in a real life situation, but also technically problematic.</p>
+<p>(<a href="http://github.com/joom/herbrand-prolog">Link to the project on GitHub</a>)</p>
+<p>In this blog post, I will discuss the problems of building this project and the limitations we encounter in terms of how pseudo this Prolog is.</p>
+<h2 id="implementation-problems">Implementation Problems</h2>
+<p>Note that trying to find answers for queries by building the least Herbrand model is problematic in certain ways. First of all, for many programs, the least Herbrand model is infinite. For example,</p>
+<div class="sourceCode"><pre class="sourceCode prolog"><code class="sourceCode prolog">add(o<span class="kw">,</span><span class="dt">X</span><span class="kw">,</span><span class="dt">X</span>)<span class="kw">.</span>
+add(s(<span class="dt">X</span>)<span class="kw">,</span> <span class="dt">Y</span><span class="kw">,</span> s(<span class="dt">Z</span>)) <span class="kw">:-</span> add(<span class="dt">X</span><span class="kw">,</span><span class="dt">Y</span><span class="kw">,</span><span class="dt">Z</span>)<span class="kw">.</span></code></pre></div>
+<p>will have an infinite least Herbrand model, which is like this:</p>
+<p>\[T_P(\emptyset) = \{add(o,o,o), add(o,s(o), s(o)), add(o, s(s(o)), s(s(o))), …\} \] \[T_P(T_P(\emptyset)) = \{add(s(o), o, s(o)), add(s(o), s(o), s(s(o))), add(s(o), s(s(o)), s(s(s(o)))), …\} \] \[\mathbb{M}_P = T_P(\emptyset) \cup T_P(T_P(\emptyset)) \cup … \]</p>
+<p>or with another notation,</p>
+<p>\[ \mathbb M_P = \bigcup_{i=1}^{n} (T_P)^{i} (\emptyset)\]</p>
+<p>Note that it’s not only that the result \(T_P\) on any set is infinite, but also \(\mathbb M_P\) is constructed by the union of infinite number of sets. In this case, we need to make sure that our implementation doesn’t get stuck in an infinite list.</p>
+<p>Since our program is going to proceed by trying to find the query in the created Herbrand base, we should make sure that it doesn’t try to construct the entire Herbrand base first. This would cause the program to fail whenever the program has a predicate like the example above. (\(add/3\)) Haskell’s lazy evaluation is a perfect environment to avoid this. However, we cannot use the built-in <a href="https://downloads.haskell.org/~ghc/7.8.2/docs/html/libraries/containers-0.5.5.1/Data-Set.html">Data.Set</a> type (which is not lazy) in Haskell, we need another data type to represent an infinite set. We also need this infinite set structure to handle set unions with lazy evaluation, and we need to check membership without getting stuck on the first element of a set union.</p>
+<p>For example, for the \(add/3\) example above, if the query happens to be <code>add(s(o), o, s(o))</code>, the program should not get stuck in \(T_P(\emptyset)\), which is an infinite set. The answer is in \(T_P(T_P(\emptyset))\), which is the second set in the union \(\mathbb{M}_P\). Our infinite set data type should be able to handle this kind of issue.</p>
+<p>However, what makes this project a pseudo-Prolog is that, it can never say <code>no</code> for a predicate like <code>add</code>. It will check membership in \(\mathbb{M}_P\) forever and it will never find one for an incorrect query, such as <code>add(s(o), o, o)</code>. A real Prolog implementation would get the result <code>no</code> with SLD resolution, which is not what this project does. (again, <em>pseudo</em>-Prolog)</p>
+<h2 id="unpacking-the-problem">Unpacking the problem</h2>
+<p>As I mentioned in the previous section, Haskell’s built-in set structure doesn’t allow infinite sets, since it is not lazily evaluated. Data.Set also requires the type to be an instance of the type class <code>Ord</code>, which doesn’t make much sense for the types in question.</p>
+<p>I looked for an implementation of infinite sets in Haskell, but the one I found (<a href="https://hackage.haskell.org/package/infinite-search-0.12/docs/Data-Searchable.html">Data.Searchable</a>) was not handling set unions the way this problem required. Our infinite set structure should be able to handle the union of different infinite sets. By that, I mean that when looking up for an element in a union of infinite sets, it shouldn’t get stuck in the first infinite list; it should go step by step. But it cannot just check the first elements, because there is a chance that the set is a union of an infinite number of elements, so in that case it would get stuck looking at the first elements of infinite numbers of sets.</p>
+<h2 id="my-infinite-set-implementation">My infinite set implementation</h2>
+<p>To solve, the problems I encountered, I needed to implement <a href="https://github.com/joom/herbrand-prolog/blob/master/src/Data/InfiniteSet.hs">my own infinite set data type</a>. In order to allow a union of sets to be handled lazily, I created a set type (<code>Set a</code>) with two data constructors: <code>Set [a]</code> and <code>Union [Set a]</code>. Since a list is a data type that allows lazy evaluation, this implementation should work for our purposes. Of course, there are two crucial things that my implementation fails to satisfy:</p>
+<ol style="list-style-type: decimal">
+<li><p>Repeating elements! How is this possibly a set if there are recurring elements?! To be honest, it’s not, but it’s possible to make it one. Since this is an experimental project, I don’t mind having the same element more than once in the set. Also, checking for repeated elements is very costly in a list with infinite number of elements.</p></li>
+<li><p>Complexity. Note that an atomic set is a list, after all. This requires quadratic time, \( O(n^2) \), if you want to check for repeating elements as well. Omitting repeating element check means that we only need linear time, \( O(n) \). This was a trade-off I made since this was only an experimental project.</p></li>
+</ol>
+<h3 id="membership-check-in-an-infinite-set">Membership check in an infinite set</h3>
+<p>I previously described the problems with membership check that we need for this project. Since <code>Union [Set a]</code> contains a list that allows lazy evaluation, we can go one step at a time. Likewise, <code>Set [a]</code> contains a list, so we can check the elements one element at a time as well. Let’s draw a table of how we can check the elements in a union: (@ denotes the index of the set in the union, # denotes the index of the element in the corresponding set, ! represents at which lookup step the element is checked)</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Table</th>
+<th align="left"><span class="citation">@0</span></th>
+<th align="left"><span class="citation">@1</span></th>
+<th align="left"><span class="citation">@2</span></th>
+<th align="left"><span class="citation">@3</span></th>
+<th align="left">.. \(\infty\)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">#0</td>
+<td align="left">!1</td>
+<td align="left"><em>!2</em></td>
+<td align="left">!3</td>
+<td align="left"><em>!4</em></td>
+<td align="left">..</td>
+</tr>
+<tr class="even">
+<td align="left">#1</td>
+<td align="left"><em>!2</em></td>
+<td align="left">!3</td>
+<td align="left"><em>!4</em></td>
+<td align="left">!5</td>
+<td align="left">..</td>
+</tr>
+<tr class="odd">
+<td align="left">#2</td>
+<td align="left">!3</td>
+<td align="left"><em>!4</em></td>
+<td align="left">!5</td>
+<td align="left"><em>!6</em></td>
+<td align="left">..</td>
+</tr>
+<tr class="even">
+<td align="left">#3</td>
+<td align="left"><em>!4</em></td>
+<td align="left">!5</td>
+<td align="left"><em>!6</em></td>
+<td align="left">!7</td>
+<td align="left">..</td>
+</tr>
+<tr class="odd">
+<td align="left">…\(\infty\)</td>
+<td align="left">..</td>
+<td align="left">..</td>
+<td align="left">..</td>
+<td align="left">..</td>
+<td align="left">..</td>
+</tr>
+</tbody>
+</table>
+<p>As you can see in the table, membership check goes diagonally, so that it doesn’t get stuck in an infinite set. This might not be very efficient, but it should work for our problem.</p>
+<hr />
+<h2 id="implementing-the-t_p-operator">Implementing the \(T_P\) operator</h2>
+<p>The \(T_P\) operator would not be very hard to implement if the <a href="http://en.wikipedia.org/wiki/Horn_clause">Horn clauses</a> didn’t have any variables. If there weren’t any variables then it would be enough to check if the argument set <a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> contains the tail formulae for each Horn clause in the program. However, that is not the case.</p>
+<p>Variables require us to replace the variables in the Horn clause with ground terms, because that is the only way we can possibly check for membership in the argument set, because the argument set only contains ground formulae.</p>
+<p>However, if there are functions<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> in our language, that means we will have an infinite number of ground terms. The golden question is: <strong>Can we build the result of a \(T_P\) operator if there are infinite number of ground terms?</strong></p>
+<p>Let’s think about this issue. Infinite number of ground terms means that we have to build the ground formulae, say, for every relation \(rel\), we have to add possible combinations of <code>Formula rel termsList</code>, where <code>termsList</code> has \(arity(rel)\) terms. Considering that there are infinite number of combinations, there are going to be an infinite number of ground formulae for every relation. Therefore, the result of the \(T_P\) operator will be a union of infinite sets. Can our lazy infinite sets handle this?</p>
+<p>Let’s leave this issue for a later time for now and how our program is supposed to handle variables.</p>
+<h3 id="handling-the-variables-in-the-horn-clause">Handling the variables in the Horn clause</h3>
+<p>Let’s remember the definition of the \(T_P\) operator at this point.</p>
+<p>\[ T_P(X) = \{ A \ | \ (A \leftarrow B_1,…,B_n) \in P, \{ B_1\theta,…,B_n\theta \} \subseteq X \} \]</p>
+<p>where \( A \leftarrow B_1,…,B_n \) is a ground instance of a clause in \(P\), which means that there are no variables inside. How can we compute a ground instance of a Horn clause that has variables? We can basically plug in all possible combinations of the ground terms and then, for the \(T_P\) operator, we can check if the tail of the new ground clause is a subset of \(X\).</p>
+<p>Is there a way to construct only the correct ground formulae? I don’t see a way to do this, so I decided to construct all possible ground formulae from all possible ground terms, and then filter them to get the correct ones. Of course, this approach makes infinite sets almost impossible. There must be a way to handle them carefully with lazy evaluation, but I cannot see how. If I try to fix the program to work with infinite sets, I’ll have the basic structures that will facilitate that.</p>
+<h2 id="the-rest">The rest</h2>
+<p>After creating a function to generate all ground instances of a non-ground Horn clause, we can create a ground program of a given language. This basically means that when we construct \(T_P\), we just have to check for membership in the ground program. (<code>groundProgram</code> in src/Herbrand/Model.hs)</p>
+<p>Completing the \(T_P\) operator makes the least Herbrand model trivial. Since we have given up the infinite sets now, we can assume that the least Herbrand model is finite.</p>
+<p>What we have to do now is to write a parser to parse facts and predicates, and a REPL to check queries. These are relatively insignificant tasks, so you can see the source code if you want to see how I did it. But I’m sure mine is definitely not the most elegant one.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>I started the project with the intent of creating a pseudo-Prolog that handles not only finite programs, but also infinite programs like the \(add/3\) predicate we talked about. However, I couldn’t do this, because when a variable is used in a predicate, there was no way for me to get only the correct ones. I could work backwards and do unification, like a real Prolog does, but that would defeat the whole experimental purpose. My only solution to build all possible formulae and take combinations of \(arity(rel)\) from that set. There might be a lazy way to do this, but I couldn’t figure it out, so I ended up building a pseudo-Prolog that doesn’t allow functions. I can call it a <a href="http://en.wikipedia.org/wiki/Datalog">Datalog</a>, but it’s probably too slow to be actually used for anything. Nevertheless, it was a fun experiment for me.</p>
+<p>(<a href="http://github.com/joom/herbrand-prolog">Link to the project on GitHub</a>)</p>
+<hr />
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>The least Herbrand model is basically the set of all atomic formulae that are true.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>The argument that \(T_P\) takes, for example, for \(T_P(\emptyset)\), it would be \(\emptyset\).<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>When I say function, I mean the <code>s</code> in <code>s(o)</code> in <code>add</code>. <code>add</code> is a relation. <code>o</code> and <code>s(o)</code> are terms, and <code>s</code> is a function.<a href="#fnref3">↩</a></p></li>
+</ol>
+</div>
+</div>
+
+<hr>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'cattheory';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+
+      <div style="clear: both"></div>
+
+      <div id="footer">
+        Powered by
+        <a target="_blank" href="http://jaspervdj.be/hakyll">Hakyll</a> and
+        <a target="_blank" href="http://johnmacfarlane.net/pandoc/">Pandoc</a>.
+        Blog source code is
+        <a target="_blank" href="http://github.com/cattheory/blog">available</a>.
+        <a target="_blank" href="https://www.haskellers.com/user/3553">
+          <img src="https://www.haskellers.com/static/badge.png" alt="I'm a Haskeller">
+        </a>
+      </div>
+    </div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-57012377-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </body>
+</html>

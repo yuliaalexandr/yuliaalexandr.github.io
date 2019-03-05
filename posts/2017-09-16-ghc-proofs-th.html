@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Joomy Korkut - Writing a Template Haskell library for GHC.Proof</title>
+    <link rel="stylesheet" type="text/css" href="../css/base.css" />
+    <link rel="stylesheet" type="text/css" href="../css/layout.css" />
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css" />
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="icon" href="../images/favicon.ico">
+    <link rel="alternate" type="application/rss+xml" title="cat theory blog" href="http://cattheory.com/atom.xml" />
+    <meta name="keywords" content="joomy,cumhur,korkut,cat,theory,category,programming,haskell,javascript,vim,turkish,politics,wesleyan,princeton" />
+    <meta name="description" content="Joomy's computer science blog." />
+    <!-- Schema.org markup for Google+ -->
+    <meta itemprop="name" content="Joomy Korkut">
+    
+      <meta itemprop="description" content="GHC.Proof is a great hack and I wanted to add another hack on top of it. It is simple enough that it could serve as a Template Haskell tutorial for others.">
+    
+    <meta itemprop="image" content="/images/icon.png">
+
+    <!-- Open Graph data -->
+    <meta property="og:title" content="Writing a Template Haskell library for GHC.Proof" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="http://cattheory.com/" />
+    <meta property="og:image" content="http://cattheory.com/images/icon.png" />
+    
+      <meta property="og:description" content="GHC.Proof is a great hack and I wanted to add another hack on top of it. It is simple enough that it could serve as a Template Haskell tutorial for others.">
+    
+    <meta property="og:site_name" content="Joomy Korkut" />
+    
+  </head>
+  <body>
+    <div id="navigation">
+      <a href="../"><h1>Joomy Korkut</h1></a>
+      <a href="../">Home</a>
+      <a href="../archive.html">Archive</a>
+      <a href="../pages/research.html">Research</a>
+      <!-- <a href="/turkce.html" style="font-size:80%">🇹🇷 Türkçe</a> -->
+      <div>
+        <a alt="E-mail" target="_blank" href="mailto:joomy@cattheory.com"><i class="fa fa-at"></i></a>
+        <a alt="Facebook" target="_blank" href="https://facebook.com/ckorkut"><i class="fa fa-facebook"></i></a>
+        <a alt="Github" target="_blank" href="http://github.com/joom"><i class="fa fa-github"></i></a>
+        <a alt="Twitter" target="_blank" href="http://twitter.com/cattheory"><i class="fa fa-twitter"></i></a>
+        <a alt="Instagram" target="_blank" href="http://instagram.com/cattheory"><i class="fa fa-instagram"></i></a>
+      </div>
+      <div>
+        <a alt="Google Calendar" target="_blank" href="https://calendar.google.com/calendar/embed?src=cumhurkorkut%40gmail.com&ctz=America%2FNew_York"><i class="fa fa-calendar"></i></a>
+        <a alt="Linkedin" target="_blank" href="http://www.linkedin.com/in/joomykorkut/"><i class="fa fa-linkedin-square"></i></a>
+        <a alt="Stack Overflow" target="_blank" href="https://stackoverflow.com/users/2016295/joomy-korkut"><i class="fa fa-stack-overflow"></i></a>
+        <a alt="Last.fm" target="_blank" href="http://last.fm/user/cattheory"><i class="fa fa-lastfm-square"></i></a>
+        <a alt="Spotify" target="_blank" href="https://open.spotify.com/user/12122900763"><i class="fa fa-spotify"></i></a>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="post-title">
+<a href="../posts/2017-09-16-ghc-proofs-th.html">Writing a Template Haskell library for GHC.Proof</a>
+</div>
+
+<div class="info">
+    Posted on September 16, 2017,
+    
+        by joomy,
+    
+    
+      in: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/tutorial.html">tutorial</a>
+    
+</div>
+
+<div class="post-body">
+<p>I learned about <a href="http://github.com/nomeata">Joachim Breitner</a>’s <a href="http://github.com/nomeata/ghc-proofs">ghc-proofs</a> from his WPTE 2017 talk. For those who are not familiar, it is a tool that looks at the compiled core source of a program to see if two terms are represented by the same thing, and if they are, that constitutes a proof that two terms are equal. Even though it is very limited by the optimizations GHC does, and laziness and polymorphism can sometimes prevent us from getting the desired result, I thought it was a simple but great hack that should be utilized even more.</p>
+<p>In <a href="https://github.com/nomeata/ghc-proofs/blob/master/examples/Successors.hs">one of the examples</a>, a new data type is defined and then there are <code>Functor</code>, <code>Applicative</code>, and <code>Monad</code> instances declared for this data type. Then using the library there are proof obligations for GHC, each functor, monad and applicative law written by hand, such as below.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">functor_law1 ::</span> <span class="dt">Succs</span> a <span class="ot">-&gt;</span> <span class="dt">Proof</span>
+functor_law1 v <span class="fu">=</span> fmap id v
+             <span class="fu">===</span> v</code></pre></div>
+<p>Defining new data types and declaring type class instances is common in Haskell. A user might also want to see if their definition obeys the relevant type class laws in a way that is trivial to GHC. So let’s automate that! We want to generate new functions, and <a href="https://ocharles.org.uk/blog/guest-posts/2014-12-22-template-haskell.html">Template Haskell</a> is a decent way to achieve this goal. (I’ll abbreviate it to “TH”.) This post is a tutorial for people who want to see a real life example for TH.</p>
+<h2 id="basic-types">Basic types</h2>
+<p>Let’s take a top-down approach. The user of our library should be able to write</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(makeLaws <span class="ch">''</span><span class="dt">Maybe</span>  [<span class="ch">''</span><span class="dt">Functor</span>, <span class="ch">''</span><span class="dt">Applicative</span>, <span class="ch">''</span><span class="dt">Monad</span>])</code></pre></div>
+<p>or since the <code>$(...)</code> notation is unnecessary on top level, one can just write</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">makeLaws <span class="ch">''</span><span class="dt">Maybe</span>  [<span class="ch">''</span><span class="dt">Functor</span>, <span class="ch">''</span><span class="dt">Applicative</span>, <span class="ch">''</span><span class="dt">Monad</span>]</code></pre></div>
+<p>Note that the <code>''</code> notation is a way to get a value of type <code>Name</code>. This is how names of variables, functions and types are represented in TH. However <code>''</code> only works for types, for variables and functions you are supposed to use <code>'</code>, like <code>'map</code>.</p>
+<p>So we want to have a function that takes the name of the type, and the name of the type class, and generates the functions. Here’s what I came up with:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">makeLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [<span class="dt">Name</span>] <span class="ot">-&gt;</span> <span class="dt">DecsQ</span></code></pre></div>
+<p>You might ask what <code>DecsQ</code> is. Function declarations are represented by the type <code>DecsQ</code> in TH. If we ask the REPL what that exactly is, we get the following information:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">&gt;</span> <span class="fu">:</span>i <span class="dt">DecsQ</span>
+<span class="kw">type</span> <span class="dt">DecsQ</span> <span class="fu">=</span> <span class="dt">Q</span> [<span class="dt">Dec</span>] 	<span class="co">-- Defined in ‘Language.Haskell.TH.Lib’</span></code></pre></div>
+<p>So it is simply a list of <code>Dec</code>s (declarations) in the <code>Q</code> (quotation) monad. If we inquire further from the REPL:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">&gt;</span> <span class="fu">:</span>i <span class="dt">Dec</span>
+<span class="kw">data</span> <span class="dt">Dec</span>
+  <span class="fu">=</span> <span class="dt">FunD</span> <span class="dt">Name</span> [<span class="dt">Clause</span>]
+  <span class="fu">|</span> <span class="dt">ValD</span> <span class="dt">Pat</span> <span class="dt">Body</span> [<span class="dt">Dec</span>]
+  <span class="fu">|</span> <span class="dt">DataD</span> <span class="dt">Cxt</span> <span class="dt">Name</span> [<span class="dt">TyVarBndr</span>] (<span class="dt">Maybe</span> <span class="dt">Kind</span>) [<span class="dt">Con</span>] [<span class="dt">DerivClause</span>]
+  <span class="fu">...</span>
+  <span class="fu">|</span> <span class="dt">SigD</span> <span class="dt">Name</span> <span class="dt">Type</span>
+  <span class="fu">...</span></code></pre></div>
+<p>We get a long list of declaration constructors, of which only two are relevant to us: <code>FunD</code> and <code>SigD</code>, i.e. function declarations and type signature declarations. We will get back to this later.</p>
+<h2 id="q-monad"><code>Q</code> monad</h2>
+<p>Well, then what is the <code>Q</code> or quotation monad? For now, we will say that anything that is quoted, or antiquoted will be in the <code>Q</code> monad. In simple words, it is a way to get a syntax tree for some code in the surface language syntax, and a way to inject a syntax tree in the code you are writing. The syntax tree you get from some code or a syntax tree that you inject both have to inhabit the <code>Q</code> monad. Let’s see some examples:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">&gt;</span> <span class="fu">:</span>t [<span class="fu">|</span> map <span class="fu">|</span>]
+[<span class="fu">|</span> map <span class="fu">|</span>]<span class="ot"> ::</span> <span class="dt">ExpQ</span>
+
+<span class="fu">&gt;</span> runQ [<span class="fu">|</span> map <span class="fu">|</span>]
+<span class="dt">VarE</span> GHC.Base.map
+
+<span class="fu">&gt;</span> <span class="fu">:</span>t [<span class="fu">||</span> map <span class="fu">||</span>]
+[<span class="fu">||</span> map <span class="fu">||</span>]<span class="ot"> ::</span> <span class="dt">Q</span> (<span class="dt">TExp</span> ((a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]))
+
+<span class="fu">&gt;</span> <span class="fu">:</span>t [t<span class="fu">|</span> <span class="dt">Maybe</span> <span class="dt">Int</span> <span class="fu">|</span>]
+[t<span class="fu">|</span> <span class="dt">Maybe</span> <span class="dt">Int</span> <span class="fu">|</span>]<span class="ot"> ::</span> <span class="dt">TypeQ</span>
+
+<span class="fu">&gt;</span> runQ [t<span class="fu">|</span> <span class="dt">Maybe</span> <span class="dt">Int</span> <span class="fu">|</span>]
+<span class="dt">AppT</span> (<span class="dt">ConT</span> <span class="dt">GHC.Base.Maybe</span>) (<span class="dt">ConT</span> <span class="dt">GHC.Types.Int</span>)
+
+<span class="fu">&gt;</span> <span class="fu">:</span>t [d<span class="fu">|</span> f x <span class="fu">=</span> <span class="dt">True</span> <span class="fu">|</span>]
+[d<span class="fu">|</span> f x <span class="fu">=</span> <span class="dt">True</span> <span class="fu">|</span>]<span class="ot"> ::</span> <span class="dt">DecsQ</span>
+
+<span class="fu">&gt;</span> runQ [d<span class="fu">|</span> f x <span class="fu">=</span> <span class="dt">True</span> <span class="fu">|</span>]
+[<span class="dt">FunD</span> f_0 [<span class="dt">Clause</span> [<span class="dt">VarP</span> x_1] (<span class="dt">NormalB</span> (<span class="dt">ConE</span> <span class="dt">GHC.Types.True</span>)) []]]</code></pre></div>
+<p>You can probably guess that <code>ExpQ = Q Exp</code> and <code>TypeQ = Q Type</code>, since you have already seen <code>DecsQ = Q [Dec]</code>. They are simply expression and type syntax trees in the <code>Q</code> monad. The second example with <code>TExp</code> is a typed quotation, in which the type of the quoted expression appears in the type of the expression syntax tree. We will not use this in our example, so I will not elaborate on that.</p>
+<h2 id="back-to-our-library">Back to our library</h2>
+<p>Now that we have a basic understanding of TH, we can go back to designing our library. We said our entry point function would have the following type:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">makeLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [<span class="dt">Name</span>] <span class="ot">-&gt;</span> <span class="dt">DecsQ</span></code></pre></div>
+<p>which would later be called like</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">makeLaws <span class="ch">''</span><span class="dt">Maybe</span>  [<span class="ch">''</span><span class="dt">Functor</span>, <span class="ch">''</span><span class="dt">Applicative</span>, <span class="ch">''</span><span class="dt">Monad</span>]</code></pre></div>
+<p>This call would create law proofs for the <code>Functor</code>, <code>Applicative</code> and <code>Monad</code> instances. This seems like a simple iteration, so let’s write a function that takes one type and one type class to create laws for.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">singleTCLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">DecsQ</span></code></pre></div>
+<p>Obviously Haskell doesn’t automatically know what laws there are for a given type class, so we have to have a database from which we can lookup the laws. Since we only have a handful of type classes here, let’s just make an association list.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">laws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [(<span class="dt">Name</span>, <span class="dt">DecsQ</span>)]</code></pre></div>
+<p>We will define a function that takes the name of the type, like <code>''Maybe</code>, and returns an association list where the keys are names of type classes, such as <code>''Applicative</code> and the values are declaration lists.</p>
+<p>Let’s define one that only has the laws for the <code>Applicative</code> type class:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">laws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [(<span class="dt">Name</span>, <span class="dt">DecsQ</span>)]
+laws n <span class="fu">=</span> <span class="kw">let</span> t <span class="fu">=</span> returnQ (<span class="dt">ConT</span> n) <span class="kw">in</span> [
+    (<span class="ch">''</span><span class="dt">Applicative</span>,
+     [d<span class="fu">|</span>
+<span class="ot">       law1 ::</span> <span class="fu">$</span>t a <span class="ot">-&gt;</span> <span class="dt">Proof</span>
+       law1 v <span class="fu">=</span> pure id <span class="fu">&lt;*&gt;</span> v
+            <span class="fu">===</span> v
+
+<span class="ot">       law2 ::</span> <span class="fu">$</span>t (b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="fu">$</span>t (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="fu">$</span>t a <span class="ot">-&gt;</span> <span class="dt">Proof</span>
+       law2 u v w <span class="fu">=</span> pure (<span class="fu">.</span>) <span class="fu">&lt;*&gt;</span> u <span class="fu">&lt;*&gt;</span> v <span class="fu">&lt;*&gt;</span> w
+                <span class="fu">===</span> u <span class="fu">&lt;*&gt;</span> (v <span class="fu">&lt;*&gt;</span> w)
+
+<span class="ot">       law3 ::</span> forall a b<span class="fu">.</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Proof</span>
+       law3 f x <span class="fu">=</span> pure f <span class="fu">&lt;*&gt;</span> (pure<span class="ot"> x ::</span> <span class="fu">$</span>t a)
+              <span class="fu">===</span> pure (f x)
+     <span class="fu">|</span>])
+  ]</code></pre></div>
+<p>Now this is a too much information to understand at once. Let’s break it down.</p>
+<p>Our function takes a name, and we want to use this name in a quotation, so we have to convert this to a value of the type <code>TypeQ</code>. (i.e. <code>Q Type</code>) We are using two things for that:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">ConT</span>
+<span class="dt">ConT</span><span class="ot"> ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>
+
+<span class="fu">&gt;</span> <span class="fu">:</span>t returnQ
+<span class="ot">returnQ ::</span> a <span class="ot">-&gt;</span> <span class="dt">Q</span> a</code></pre></div>
+<p>The former is a constructor for <code>Type</code>, and the latter is a function to lift the pure <code>Type</code> value to the <code>Q</code> monad.</p>
+<p>Now that we have defined <code>t</code>, we can start our association list. For now we only have one member of the list, which is a pair of <code>''Applicative</code>, which is of the type <code>''Name</code>, and a declaration list quotation, of the type <code>DecsQ</code>.</p>
+<p>The unusual thing in here is that we have some <code>$t</code> sprinkled around in our code. This is called a splice*. (or antiquotation in this case, since it is happening inside a quotation.) It is a way of injecting syntax tree variables that we have in our metalanguage to the code that we are quoting. The variable <code>t</code> that we defined now gets used in the type signature of the laws.</p>
+<p>Notice that in <code>law3</code>, the type signature of the function does not contain <code>$t</code>. Because of this, Haskell cannot infer that we only want to check things for a specific applicative instance. Therefore we want to explicitly annotate some part of the expression so that Haskell can infer that the entire function. If we knew what exactly we were dealing with, such as <code>Maybe Int</code>, we could just write <code>pure x :: Maybe Int</code>. However, we have to depend on the type variable <code>a</code>. To do that, we need a language extension called <a href="https://ocharles.org.uk/blog/guest-posts/2014-12-20-scoped-type-variables.html">ScopedTypeVariables</a>. To be able to use that, we need another language extension called <a href="https://stackoverflow.com/questions/15800878/scoped-type-variables-require-explicit-foralls-why">ExplicitForAll</a>. Now we can just say <code>pure x :: $t a</code> and the applicative instance for the rest of the function will be inferred.</p>
+<h2 id="renaming-functions">Renaming functions</h2>
+<p>Now our <code>laws</code> function should be clear. But the problem now is that if we generate laws for different types, their names will clash. We should have a way to create names that contain the type and type class we are generating laws for. Unfortunately we cannot do this in the quotation, we because there is <a href="https://stackoverflow.com/questions/16332124/template-haskell-names-of-declarations-as-strings">no way to splice names</a>.</p>
+<p>Therefore we will have to generate names manually for our functions. Instead of generating entirely new names for laws, we can just take the approach of adding prefixes to all names. This will be a <code>map</code> over a call to <code>laws</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">renamedLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [(<span class="dt">Name</span>, <span class="dt">DecsQ</span>)]
+renamedLaws n <span class="fu">=</span> map f (laws n)
+  <span class="kw">where</span>
+    <span class="fu">...</span></code></pre></div>
+<p>Now let’s complete this function. However, we first need a function to make an appropriate prefix.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getName ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span>
+getName t tc <span class="fu">=</span>
+    mkName <span class="fu">$</span> map toLower <span class="fu">$</span> concat <span class="fu">$</span> intersperse <span class="st">&quot;_&quot;</span> [get t, get tc, <span class="st">&quot;&quot;</span>]
+  <span class="kw">where</span> get n <span class="fu">|</span> n <span class="fu">==</span> <span class="ch">''</span>[] <span class="fu">=</span> <span class="st">&quot;list&quot;</span>
+              <span class="fu">|</span> otherwise <span class="fu">=</span> nameBase n</code></pre></div>
+<p>This function takes a type name and a type class name, and generates a prefix of type <code>Name</code>. <code>getName ''Maybe ''Monad</code> will generate <code>maybe_monad_</code>. We want a trailing underscore since this will be a prefix to something. Notice that the <code>Name</code> for lists contains special characters that are not allowed in variables, so we assign a different name for that as an exception.</p>
+<p>Now let’s write a function to concatenate two <code>Name</code>s.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(+++) ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span>
+(<span class="fu">+++</span>) a b <span class="fu">=</span> mkName (nameBase a <span class="fu">++</span> nameBase b)</code></pre></div>
+<p>Surely this is a bit hacky, since <code>Name</code> is meant to contain information like namespace and we are treating it like a string. For our purposes, this will work.</p>
+<p>Let’s go back to <code>renamedLaws</code>. We can complete the function as such:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">renamedLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [(<span class="dt">Name</span>, <span class="dt">DecsQ</span>)]
+renamedLaws n <span class="fu">=</span> map f (laws n)
+  <span class="kw">where</span>
+<span class="ot">    prefix ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Dec</span> <span class="ot">-&gt;</span> <span class="dt">Dec</span>
+    prefix newN (<span class="dt">SigD</span> oldN t) <span class="fu">=</span> <span class="dt">SigD</span> (newN <span class="fu">+++</span> oldN) t
+    prefix newN (<span class="dt">FunD</span> oldN t) <span class="fu">=</span> <span class="dt">FunD</span> (newN <span class="fu">+++</span> oldN) t
+    prefix _ d <span class="fu">=</span> d
+<span class="ot">    f ::</span> (<span class="dt">Name</span>, <span class="dt">DecsQ</span>) <span class="ot">-&gt;</span> (<span class="dt">Name</span>, <span class="dt">DecsQ</span>)
+    f (tc, ds) <span class="fu">=</span> (tc, map (prefix (getName n tc)) <span class="fu">&lt;$&gt;</span> ds)</code></pre></div>
+<p>The function <code>f</code> acts on a pair of a type class name and declaration list. It leaves the name alone in the pair, but uses it to generate a new name for functions. Once we call <code>getName</code> for each combination of type and type class name, we can prefix it to the declarations in the <code>DecsQ</code>. However, notice that the declarations are in the <code>Q</code> monad, so we have to use <code>&lt;$&gt;</code> to apply the map.</p>
+<p>The function <code>prefix</code> is more straightforward because we have already seen <code>SigD</code> and <code>FunD</code> earlier. We check what declaration we are looking at; if we have a type signature or function declaration, we prepend the prefix to the old name.</p>
+<p>Notice that the type of <code>renamedLaws</code> is a function from a type name to an association list, just like <code>laws</code>.</p>
+<h2 id="finishing-up">Finishing up</h2>
+<p>Now we can define <code>singleTCLaws</code> and <code>makeLaws</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">singleTCLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">DecsQ</span>
+singleTCLaws n tc <span class="fu">=</span> fromMaybe
+  (error <span class="fu">$</span> <span class="st">&quot;There are no laws defined for &quot;</span> <span class="fu">++</span> show tc)
+  (lookup tc (renamedLaws n))
+
+<span class="ot">makeLaws ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> [<span class="dt">Name</span>] <span class="ot">-&gt;</span> <span class="dt">DecsQ</span>
+makeLaws n tcs <span class="fu">=</span> concat <span class="fu">&lt;$&gt;</span> mapM (singleTCLaws n) tcs</code></pre></div>
+<p>The definition of <code>singleTCLaws</code> is merely a <code>lookup</code>from an association list. If the lookup fails, we can just abort since this program will be run in compile time.</p>
+<p>The definition of <code>makeLaws</code> is simply an iteration of a type class list. Once we get different association lists from each call to <code>singleTCLaws</code>, we <code>concat</code> them to get a single declaration list that a user of our library can inject (i.e. splice) into their code.</p>
+<p>In this post, we only defined laws for the <code>Applicative</code> instance, but you can add more for other instances. <a href="https://github.com/joom/ghc-proofs/blob/master/GHC/Proof/TH.hs">Here in the full code</a>, you can see all the type classes for which we added laws.</p>
+<h1 id="example">Example</h1>
+<p>Here is what a file that uses our library:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE ScopedTypeVariables, TemplateHaskell #-}</span>
+<span class="ot">{-# OPTIONS_GHC -O -fplugin GHC.Proof.Plugin #-}</span>
+<span class="kw">module</span> <span class="dt">ThTest</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">GHC.Proof.TH</span>
+
+makeLaws <span class="ch">''</span>[]     [<span class="ch">''</span><span class="dt">Functor</span>, <span class="ch">''</span><span class="dt">Applicative</span>, <span class="ch">''</span><span class="dt">Monad</span>]
+makeLaws <span class="ch">''</span><span class="dt">Maybe</span>  [<span class="ch">''</span><span class="dt">Functor</span>, <span class="ch">''</span><span class="dt">Applicative</span>, <span class="ch">''</span><span class="dt">Monad</span>]
+makeLaws <span class="ch">''</span><span class="dt">String</span> [<span class="ch">''</span><span class="dt">Monoid</span>]
+
+main <span class="fu">=</span> putStrLn <span class="st">&quot;Success.&quot;</span></code></pre></div>
+<p>And here’s how we can see it work in compile time:</p>
+<pre><code>$ ghc -O ThTest.hs
+[1 of 1] Compiling ThTest           ( ThTest.hs, ThTest.o )
+GHC.Proof: Proving list_functor_law1 …
+GHC.Proof: Proving list_functor_law2 …
+GHC.Proof: Proving list_applicative_law1 …
+GHC.Proof: Proving list_applicative_law2 …
+GHC.Proof: Proving list_applicative_law3 …
+GHC.Proof: Proving list_monad_law1 …
+GHC.Proof: Proving list_monad_law2 …
+GHC.Proof: Proving list_monad_law3 …
+GHC.Proof: Proving list_monad_return_pure …
+GHC.Proof: Proving list_monad_ap_star …
+GHC.Proof: Proving maybe_functor_law1 …
+GHC.Proof: Proving maybe_functor_law2 …
+GHC.Proof: Proving maybe_applicative_law1 …
+GHC.Proof: Proving maybe_applicative_law2 …
+GHC.Proof: Proving maybe_applicative_law3 …
+GHC.Proof: Proving maybe_monad_law1 …
+GHC.Proof: Proving maybe_monad_law2 …
+GHC.Proof: Proving maybe_monad_law3 …
+GHC.Proof: Proving maybe_monad_return_pure …
+GHC.Proof: Proving maybe_monad_ap_star …
+GHC.Proof: Proving string_monoid_law2 …
+GHC.Proof: Proving string_monoid_law1 …
+GHC.Proof proved 22 equalities</code></pre>
+<p>So it works! It might not be a good idea to use in most cases since you cannot tweak a specific law to get around laziness or other issues, but it makes a good example of TH’s power. Please let me know if there’s any part of this that is unclear or that can be improved!</p>
+</div>
+
+<hr>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'cattheory';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+
+      <div style="clear: both"></div>
+
+      <div id="footer">
+        Powered by
+        <a target="_blank" href="http://jaspervdj.be/hakyll">Hakyll</a> and
+        <a target="_blank" href="http://johnmacfarlane.net/pandoc/">Pandoc</a>.
+        Blog source code is
+        <a target="_blank" href="http://github.com/cattheory/blog">available</a>.
+        <a target="_blank" href="https://www.haskellers.com/user/3553">
+          <img src="https://www.haskellers.com/static/badge.png" alt="I'm a Haskeller">
+        </a>
+      </div>
+    </div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-57012377-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </body>
+</html>

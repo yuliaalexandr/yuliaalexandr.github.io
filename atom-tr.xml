@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>joomy's blog</title>
+    <link href="http://cattheory.com/atom-tr.xml" rel="self" />
+    <link href="http://cattheory.com" />
+    <id>http://cattheory.com/atom-tr.xml</id>
+    <author>
+        <name>Joomy Korkut</name>
+        <email>joomy@cattheory.com</email>
+    </author>
+    <updated>Unknown</updated>
+    
+</feed>

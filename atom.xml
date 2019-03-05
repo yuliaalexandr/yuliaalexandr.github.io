@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>joomy's blog</title>
+    <link href="http://cattheory.com/atom.xml" rel="self" />
+    <link href="http://cattheory.com" />
+    <id>http://cattheory.com/atom.xml</id>
+    <author>
+        <name>Joomy Korkut</name>
+        <email>joomy@cattheory.com</email>
+    </author>
+    <updated>2018-09-30T00:00:00Z</updated>
+    <entry>
+    <title>Direct reflections from ICFP 2018</title>
+    <link href="http://cattheory.com/posts/2018-09-30-icfp-2018.html" />
+    <id>http://cattheory.com/posts/2018-09-30-icfp-2018.html</id>
+    <published>2018-09-30T00:00:00Z</published>
+    <updated>2018-09-30T00:00:00Z</updated>
+    <summary type="html"><![CDATA[I spent a week at the main functional programming conference and got to talk to my heroes, so here are some reflections.]]></summary>
+</entry>
+<entry>
+    <title>The diacritic omission phenomenon</title>
+    <link href="http://cattheory.com/posts/2017-11-18-diacritic-omission.html" />
+    <id>http://cattheory.com/posts/2017-11-18-diacritic-omission.html</id>
+    <published>2017-11-18T00:00:00Z</published>
+    <updated>2017-11-18T00:00:00Z</updated>
+    <summary type="html"><![CDATA[Omitting the diacritics is a common phenomenon in languages such as Turkish and Serbo-Croatian. Then why isn't there any research on this?]]></summary>
+</entry>
+<entry>
+    <title>Scoped implicit conversions for Idris</title>
+    <link href="http://cattheory.com/posts/2017-11-14-scoped-implicit-conversions.html" />
+    <id>http://cattheory.com/posts/2017-11-14-scoped-implicit-conversions.html</id>
+    <published>2017-11-14T00:00:00Z</published>
+    <updated>2017-11-14T00:00:00Z</updated>
+    <summary type="html"><![CDATA[The Idris community is not so fond of implicit conversions, I think they're a useful and powerful tool that are easy to misuse. Here's an idea to fix them.]]></summary>
+</entry>
+<entry>
+    <title>Writing a Template Haskell library for GHC.Proof</title>
+    <link href="http://cattheory.com/posts/2017-09-16-ghc-proofs-th.html" />
+    <id>http://cattheory.com/posts/2017-09-16-ghc-proofs-th.html</id>
+    <published>2017-09-16T00:00:00Z</published>
+    <updated>2017-09-16T00:00:00Z</updated>
+    <summary type="html"><![CDATA[GHC.Proof is a great hack and I wanted to add another hack on top of it. It is simple enough that it could serve as a Template Haskell tutorial for others.]]></summary>
+</entry>
+<entry>
+    <title>Switching to Kinesis Advantage</title>
+    <link href="http://cattheory.com/posts/2017-08-10-kinesis-advantage.html" />
+    <id>http://cattheory.com/posts/2017-08-10-kinesis-advantage.html</id>
+    <published>2017-08-10T00:00:00Z</published>
+    <updated>2017-08-10T00:00:00Z</updated>
+    <summary type="html"><![CDATA[My new keyboard and related workflow changes]]></summary>
+</entry>
+<entry>
+    <title>Starting a Haskell student forum at Wesleyan</title>
+    <link href="http://cattheory.com/posts/2015-06-01-haskell-wesleyan.html" />
+    <id>http://cattheory.com/posts/2015-06-01-haskell-wesleyan.html</id>
+    <published>2015-06-01T00:00:00Z</published>
+    <updated>2015-06-01T00:00:00Z</updated>
+    <summary type="html"><![CDATA[I will be giving lectures on Functional Programming in Haskell next semester.]]></summary>
+</entry>
+<entry>
+    <title>Language immersion for linguistic freaks</title>
+    <link href="http://cattheory.com/posts/2015-05-04-language-immersion.html" />
+    <id>http://cattheory.com/posts/2015-05-04-language-immersion.html</id>
+    <published>2015-05-04T00:00:00Z</published>
+    <updated>2015-05-04T00:00:00Z</updated>
+    <summary type="html"><![CDATA[My reflection on how I felt when I was adapting to an English-speaking environment.]]></summary>
+</entry>
+<entry>
+    <title>An impractical pseudo-Prolog</title>
+    <link href="http://cattheory.com/posts/2014-12-05-herbrand.html" />
+    <id>http://cattheory.com/posts/2014-12-05-herbrand.html</id>
+    <published>2014-12-05T00:00:00Z</published>
+    <updated>2014-12-05T00:00:00Z</updated>
+    <summary type="html"><![CDATA[I built a pseudo-Prolog that tries to answer queries by building the least Herbrand model, as a final project for a class. I chose to build it in Haskell to take advantage of lazy evaluations, but even then I couldn't handle infinite sets.]]></summary>
+</entry>
+<entry>
+    <title>Testing the waters with poetry translation</title>
+    <link href="http://cattheory.com/posts/2014-11-30-turkish-poetry.html" />
+    <id>http://cattheory.com/posts/2014-11-30-turkish-poetry.html</id>
+    <published>2014-11-30T00:00:00Z</published>
+    <updated>2014-11-30T00:00:00Z</updated>
+    <summary type="html"><![CDATA[I translated a couple of famous Turkish poems to English. It turns out that translation is fun and tough. I'll also ramble a bit about adaptation to the US.]]></summary>
+</entry>
+<entry>
+    <title>Hakyll seems awesome</title>
+    <link href="http://cattheory.com/posts/2014-11-22-new-blog.html" />
+    <id>http://cattheory.com/posts/2014-11-22-new-blog.html</id>
+    <published>2014-11-22T00:00:00Z</published>
+    <updated>2014-11-22T00:00:00Z</updated>
+    <summary type="html"><![CDATA[I started a blog with Hakyll.]]></summary>
+</entry>
+
+</feed>
