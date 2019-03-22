@@ -22,7 +22,7 @@ div#footer {
 }
 
 html {
-    background-color: #e8e8e8;
+    background-color: #fef9ff;
     font-size: 16px;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     line-height: 24px;
@@ -33,13 +33,13 @@ body {
 }
 
 a {
-    color: #007fc9;
+    color: #0075e2;
     text-decoration: none;
     border-bottom: 1px solid #1d1e30;
 }
 
 a:hover {
-  border-bottom: 2px solid #007fc9;
+  border-bottom: 2px solid #0075e2;
 }
 
 div.figure a{
