@@ -140,7 +140,8 @@ div#footer {
 }
 
 .post-subtitle {
-  font-style: bold, underline;
+  font-style: bold;
+  border-bottom: 1px solid #1d1e30;
   font-size: 1.2em;
   margin-bottom: 5px;
 }
