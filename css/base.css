@@ -139,6 +139,11 @@ div#footer {
   margin-bottom: 10px;
 }
 
+.post-subtitle {
+  font-style: italic;
+  font-size: 1.2em;
+}
+
 .info {
   font-style: italic;
   color: #555;
