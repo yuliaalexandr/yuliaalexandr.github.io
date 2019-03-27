@@ -144,6 +144,12 @@ div#footer {
   font-style: bold;
 }
 
+.right {
+  color: #555;
+  float:right; 
+  font-size: 80%;
+}
+
 .info {
   font-style: italic;
   color: #555;
@@ -236,6 +242,4 @@ div#dsq-subscribe em {
     text-decoration: none;
 }
 
-.right {
-  float:right; 
-}
+
