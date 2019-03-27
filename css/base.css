@@ -235,3 +235,7 @@ div#disqus_thread ul {
 div#dsq-subscribe em {
     text-decoration: none;
 }
+
+.right {
+  float:right; 
+}
