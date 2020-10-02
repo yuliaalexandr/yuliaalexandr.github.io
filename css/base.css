@@ -29,11 +29,11 @@ html {
 }
 
 body {
-    color: #004f3f;
+    color: #000000;
 }
 
 a {
-    color: #41856c;
+    color: #004f3f;
     text-decoration: none;
     border-bottom: 1px solid #004f3f;
 }
