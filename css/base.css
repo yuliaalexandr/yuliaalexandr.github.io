@@ -33,13 +33,13 @@ body {
 }
 
 a {
-    color: #4a9177;
+    color: #41856c;
     text-decoration: none;
     border-bottom: 1px solid #1d1e30;
 }
 
 a:hover {
-  border-bottom: 2px solid #4a9177;
+  border-bottom: 2px solid #41856c;
 }
 
 div.figure a{
