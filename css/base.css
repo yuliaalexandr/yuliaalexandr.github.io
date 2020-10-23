@@ -35,11 +35,11 @@ body {
 a {
     color: #913179;
     text-decoration: none;
-    border-bottom: 1px solid #913179;
+    border-bottom: 0px solid #913179;
 }
 
 a:hover {
-  border-bottom: 2px solid #41856c;
+  border-bottom: 2px solid #913179;
 }
 
 div.figure a{
